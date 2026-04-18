@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>lean-fuzz Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --dim: #8b949e;
+    --green: #3fb950;
+    --red: #f85149;
+    --orange: #d29922;
+    --blue: #58a6ff;
+    --purple: #bc8cff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* ---------- Header ---------- */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.live-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+.live-dot.error {
+    background: var(--red);
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.4); }
+    50% { opacity: 0.6; box-shadow: 0 0 0 6px rgba(63, 185, 80, 0); }
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: var(--dim);
+    font-size: 12px;
+}
+
+.uptime { color: var(--dim); }
+
+/* ---------- Main content ---------- */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 32px;
+}
+
+/* ---------- Stats cards ---------- */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+}
+
+.stat-card .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--dim);
+    margin-bottom: 6px;
+}
+
+.stat-card .value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.stat-card.crash .value {
+    color: var(--red);
+}
+
+.stat-card.crash.zero .value {
+    color: var(--green);
+}
+
+.stat-card.coverage .value { color: var(--blue); }
+.stat-card.features .value { color: var(--purple); }
+.stat-card.speed .value { color: var(--orange); }
+
+/* ---------- Charts ---------- */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.chart-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+.chart-card canvas {
+    width: 100% !important;
+    max-height: 250px;
+}
+
+/* ---------- Sections ---------- */
+.section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.section h2 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* ---------- Crash table ---------- */
+.crash-list { display: flex; flex-direction: column; gap: 16px; }
+
+.crash-entry {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.crash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: rgba(248, 81, 73, 0.08);
+    border-bottom: 1px solid var(--border);
+}
+
+.crash-header .crash-name {
+    color: var(--red);
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.crash-header .crash-time {
+    color: var(--dim);
+    font-size: 12px;
+}
+
+.crash-header .crash-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.crash-header .crash-actions a {
+    color: var(--blue);
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.crash-header .crash-actions a:hover {
+    text-decoration: underline;
+}
+
+.crash-program {
+    padding: 14px;
+    background: var(--bg);
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre;
+    color: var(--text);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* ---------- Last input ---------- */
+.last-input-code {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre;
+    color: var(--text);
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* ---------- Empty / error states ---------- */
+.empty {
+    color: var(--dim);
+    font-style: italic;
+    padding: 20px;
+    text-align: center;
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--dim); }
+
+/* ---------- Lean syntax highlighting ---------- */
+.kw { color: var(--purple); font-weight: 600; }
+.fn { color: var(--blue); }
+.ty { color: var(--green); }
+.str { color: #a5d6ff; }
+.cm { color: var(--dim); font-style: italic; }
+.num { color: var(--orange); }
+.op { color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <div class="live-dot" id="liveDot"></div>
+        <h1>lean-fuzz libFuzzer Dashboard</h1>
+    </div>
+    <div class="header-right">
+        <span class="uptime" id="uptime">--</span>
+        <span id="lastUpdate">--</span>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Stats cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="label">Total Executions</div>
+            <div class="value" id="statExecs">--</div>
+        </div>
+        <div class="stat-card speed">
+            <div class="label">Speed (exec/s)</div>
+            <div class="value" id="statSpeed">--</div>
+        </div>
+        <div class="stat-card coverage">
+            <div class="label">Coverage Edges</div>
+            <div class="value" id="statCoverage">--</div>
+        </div>
+        <div class="stat-card features">
+            <div class="label">Features</div>
+            <div class="value" id="statFeatures">--</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Corpus Size</div>
+            <div class="value" id="statCorpus">--</div>
+        </div>
+        <div class="stat-card crash" id="crashCard">
+            <div class="label">Crashes</div>
+            <div class="value" id="statCrashes">--</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">RSS Memory</div>
+            <div class="value" id="statRss">--</div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h3>Coverage over Time</h3>
+            <canvas id="chartCoverage"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Executions over Time</h3>
+            <canvas id="chartExecs"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Speed over Time</h3>
+            <canvas id="chartSpeed"></canvas>
+        </div>
+    </div>
+
+    <!-- Crashes -->
+    <div class="section">
+        <h2>Crashes</h2>
+        <div id="crashList" class="crash-list">
+            <div class="empty">No crashes found.</div>
+        </div>
+    </div>
+
+    <!-- Last Input -->
+    <div class="section">
+        <h2>Last Generated Input</h2>
+        <div id="lastInput">
+            <div class="empty">No input recorded yet.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// =========================================================================
+// Charts setup
+// =========================================================================
+const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: true,
+    animation: { duration: 300 },
+    plugins: {
+        legend: { display: false },
+    },
+    scales: {
+        x: {
+            type: 'linear',
+            ticks: { color: '#8b949e', font: { family: 'monospace', size: 10 },
+                callback: function(v) { return formatElapsed(v); } },
+            grid: { color: 'rgba(48,54,61,0.5)' },
+            title: { display: true, text: 'Elapsed', color: '#8b949e', font: { family: 'monospace', size: 11 } },
+        },
+        y: {
+            ticks: { color: '#8b949e', font: { family: 'monospace', size: 10 } },
+            grid: { color: 'rgba(48,54,61,0.5)' },
+        },
+    },
+};
+
+function makeChart(id, color, label) {
+    const ctx = document.getElementById(id).getContext('2d');
+    return new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: label,
+                data: [],
+                borderColor: color,
+                backgroundColor: color + '18',
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: true,
+                tension: 0.3,
+            }],
+        },
+        options: JSON.parse(JSON.stringify(chartDefaults)),
+    });
+}
+
+const covChart   = makeChart('chartCoverage', '#58a6ff', 'Coverage');
+const execChart  = makeChart('chartExecs',    '#3fb950', 'Executions');
+const speedChart = makeChart('chartSpeed',    '#d29922', 'exec/s');
+
+let plotStartTime = null;
+
+// =========================================================================
+// Formatting helpers
+// =========================================================================
+function formatNum(n) {
+    if (n === null || n === undefined || isNaN(n)) return '--';
+    if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return n.toLocaleString();
+}
+
+function formatBytes(b) {
+    if (b >= 1073741824) return (b / 1073741824).toFixed(1) + ' GB';
+    if (b >= 1048576) return (b / 1048576).toFixed(1) + ' MB';
+    if (b >= 1024) return (b / 1024).toFixed(1) + ' KB';
+    return b + ' B';
+}
+
+function formatDuration(seconds) {
+    if (!seconds || seconds < 0) return '--';
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    const parts = [];
+    if (d > 0) parts.push(d + 'd');
+    if (h > 0) parts.push(h + 'h');
+    if (m > 0) parts.push(m + 'm');
+    parts.push(s + 's');
+    return parts.join(' ');
+}
+
+function formatElapsed(epoch) {
+    if (!plotStartTime) return '';
+    const elapsed = epoch - plotStartTime;
+    if (elapsed < 0) return '';
+    const h = Math.floor(elapsed / 3600);
+    const m = Math.floor((elapsed % 3600) / 60);
+    if (h > 0) return h + 'h' + (m > 0 ? m + 'm' : '');
+    return m + 'm';
+}
+
+function formatTime(isoStr) {
+    try {
+        const d = new Date(isoStr);
+        return d.toLocaleString();
+    } catch { return isoStr; }
+}
+
+// =========================================================================
+// Lean syntax highlighting (basic)
+// =========================================================================
+function highlightLean(code) {
+    if (!code) return '';
+    // Escape HTML first
+    let s = code
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    // Comments (-- and /- -/)
+    s = s.replace(/(\/\-[\s\S]*?\-\/)/g, '<span class="cm">$1</span>');
+    s = s.replace(/(--.*)/g, '<span class="cm">$1</span>');
+
+    // Strings
+    s = s.replace(/("(?:[^"\\]|\\.)*")/g, '<span class="str">$1</span>');
+
+    // Numbers
+    s = s.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="num">$1</span>');
+
+    // Keywords
+    const kws = [
+        'def', 'theorem', 'lemma', 'example', 'instance', 'class', 'structure',
+        'inductive', 'where', 'let', 'in', 'do', 'if', 'then', 'else', 'match',
+        'with', 'fun', 'return', 'have', 'show', 'by', 'sorry', 'import', 'open',
+        'namespace', 'end', 'section', 'variable', 'noncomputable', 'private',
+        'protected', 'mutual', 'partial', 'unsafe', 'macro', 'syntax', 'elab',
+        'deriving', 'extends', 'abbrev', 'opaque', 'axiom', 'constant',
+        'set_option', 'attribute', 'universe', 'for', 'while', 'break', 'continue',
+    ];
+    const kwPattern = new RegExp('\\b(' + kws.join('|') + ')\\b', 'g');
+    s = s.replace(kwPattern, '<span class="kw">$1</span>');
+
+    // Types (capitalised identifiers, rough heuristic)
+    s = s.replace(/\b([A-Z][A-Za-z0-9_]*)\b/g, '<span class="ty">$1</span>');
+
+    return s;
+}
+
+// =========================================================================
+// Data fetching
+// =========================================================================
+let fetchOk = true;
+
+async function fetchJSON(url) {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(resp.status);
+    return resp.json();
+}
+
+async function fetchText(url) {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(resp.status);
+    return resp.text();
+}
+
+async function fetchAll() {
+    try {
+        const [stats, crashes, plot] = await Promise.all([
+            fetchJSON('/api/stats').catch(() => null),
+            fetchJSON('/api/crashes').catch(() => null),
+            fetchJSON('/api/plot').catch(() => null),
+        ]);
+
+        fetchOk = (stats !== null);
+        document.getElementById('liveDot').className = fetchOk ? 'live-dot' : 'live-dot error';
+        document.getElementById('lastUpdate').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+        if (stats) updateStats(stats);
+        if (crashes) updateCrashes(crashes);
+        if (plot) updateCharts(plot);
+
+        // Fetch last input separately (it's a plain text file)
+        try {
+            const lastInput = await fetchText('/api/last-input.lean');
+            updateLastInput(lastInput);
+        } catch {
+            // last-input.lean may not exist yet
+        }
+    } catch (err) {
+        console.error('Fetch error:', err);
+        fetchOk = false;
+        document.getElementById('liveDot').className = 'live-dot error';
+    }
+}
+
+// =========================================================================
+// UI updates
+// =========================================================================
+function updateStats(s) {
+    document.getElementById('statExecs').textContent = formatNum(s.execs);
+    document.getElementById('statSpeed').textContent = formatNum(s.exec_per_sec);
+    document.getElementById('statCoverage').textContent = formatNum(s.coverage);
+    document.getElementById('statFeatures').textContent = formatNum(s.features);
+    document.getElementById('statCorpus').textContent = s.corpus_count + ' / ' + formatBytes(s.corpus_bytes);
+    document.getElementById('statCrashes').textContent = s.crashes;
+    document.getElementById('statRss').textContent = s.rss_mb + ' MB';
+    document.getElementById('uptime').textContent = 'Uptime: ' + formatDuration(s.uptime_seconds);
+
+    const crashCard = document.getElementById('crashCard');
+    if (s.crashes === 0) {
+        crashCard.className = 'stat-card crash zero';
+    } else {
+        crashCard.className = 'stat-card crash';
+    }
+}
+
+function updateCrashes(crashes) {
+    const container = document.getElementById('crashList');
+    if (!crashes || crashes.length === 0) {
+        container.innerHTML = '<div class="empty">No crashes found.</div>';
+        return;
+    }
+
+    let html = '';
+    for (const c of crashes) {
+        const programHtml = c.program
+            ? highlightLean(c.program)
+            : '<span class="empty">No program text available</span>';
+
+        // Create a data URL for downloading raw bytes
+        const downloadHref = c.bytes_hex
+            ? 'data:application/octet-stream;base64,' + hexToBase64(c.bytes_hex)
+            : '#';
+
+        html += `
+        <div class="crash-entry">
+            <div class="crash-header">
+                <span class="crash-name">${escapeHtml(c.file)}</span>
+                <div class="crash-actions">
+                    <span class="crash-time">${formatTime(c.time)}</span>
+                    <a href="${downloadHref}" download="${escapeHtml(c.file)}.bin">download raw bytes</a>
+                </div>
+            </div>
+            <div class="crash-program">${programHtml}</div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+function updateLastInput(text) {
+    const container = document.getElementById('lastInput');
+    if (!text || text.trim() === '') {
+        container.innerHTML = '<div class="empty">No input recorded yet.</div>';
+        return;
+    }
+    container.innerHTML = '<div class="last-input-code">' + highlightLean(text) + '</div>';
+}
+
+function updateCharts(plotData) {
+    if (!plotData || plotData.length === 0) return;
+
+    if (!plotStartTime) {
+        plotStartTime = plotData[0].time;
+    }
+
+    covChart.data.datasets[0].data   = plotData.map(p => ({ x: p.time, y: p.coverage }));
+    execChart.data.datasets[0].data  = plotData.map(p => ({ x: p.time, y: p.execs }));
+    speedChart.data.datasets[0].data = plotData.map(p => ({ x: p.time, y: p.exec_per_sec }));
+
+    covChart.update();
+    execChart.update();
+    speedChart.update();
+}
+
+// =========================================================================
+// Utility
+// =========================================================================
+function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function hexToBase64(hexStr) {
+    try {
+        const bytes = hexStr.trim().split(/\s+/).map(h => parseInt(h, 16));
+        let binary = '';
+        for (const b of bytes) binary += String.fromCharCode(b);
+        return btoa(binary);
+    } catch { return ''; }
+}
+
+// =========================================================================
+// Init
+// =========================================================================
+fetchAll();
+setInterval(fetchAll, 5000);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+/.lake
+/corpus/
+/lean4-fuzz/
+/fuzz/build/
+/last-fuzz-input.lean
+*.log
+#*#

@@ -1,0 +1,16 @@
+name = "lean-fuzz"
+version = "0.1.0"
+defaultTargets = ["lean-fuzz"]
+testDriver = "test"
+
+[[lean_lib]]
+name = "LeanFuzz"
+
+[[lean_exe]]
+name = "lean-fuzz"
+root = "Main"
+
+[[lean_exe]]
+name = "test"
+root = "LeanFuzz.Test"
+
