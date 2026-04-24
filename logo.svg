@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 200" width="640" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f0f23"/>
+      <stop offset="100%" stop-color="#1a1a3e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ff6b6b"/>
+      <stop offset="50%" stop-color="#ffa64d"/>
+      <stop offset="100%" stop-color="#ff6b6b"/>
+    </linearGradient>
+    <linearGradient id="lean" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8e8ff"/>
+      <stop offset="100%" stop-color="#b0b0d0"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="640" height="200" rx="16" fill="url(#bg)"/>
+  <rect x="1" y="1" width="638" height="198" rx="15" fill="none" stroke="#333355" stroke-width="1"/>
+
+  <!-- Glitch/fuzz lines (decorative) -->
+  <g opacity="0.15">
+    <rect x="40" y="45" width="120" height="2" fill="#ff6b6b" rx="1"/>
+    <rect x="50" y="52" width="80" height="1.5" fill="#ffa64d" rx="1"/>
+    <rect x="35" y="58" width="60" height="1" fill="#ff6b6b" rx="1"/>
+    <rect x="480" y="140" width="100" height="2" fill="#ff6b6b" rx="1"/>
+    <rect x="500" y="147" width="70" height="1.5" fill="#ffa64d" rx="1"/>
+    <rect x="520" y="153" width="40" height="1" fill="#ff6b6b" rx="1"/>
+  </g>
+
+  <!-- Lambda symbol (Lean) -->
+  <g transform="translate(70, 55)">
+    <text font-family="serif" font-size="90" font-weight="bold" fill="url(#lean)" filter="url(#glow)" opacity="0.9"
+          text-anchor="middle" dominant-baseline="central" x="0" y="40">&#955;</text>
+  </g>
+
+  <!-- Differential symbol (two overlapping kernels) -->
+  <g transform="translate(110, 70)" opacity="0.6">
+    <circle cx="0" cy="25" r="18" fill="none" stroke="#6b9fff" stroke-width="2" stroke-dasharray="4,3"/>
+    <circle cx="22" cy="25" r="18" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-dasharray="4,3"/>
+    <text font-family="monospace" font-size="11" fill="#ffa64d" text-anchor="middle" x="11" y="30"
+          font-weight="bold">&#8800;</text>
+  </g>
+
+  <!-- Main title -->
+  <text x="200" y="90" font-family="'SF Mono', 'Fira Code', 'JetBrains Mono', monospace"
+        font-size="52" font-weight="bold" fill="url(#lean)" filter="url(#glow)">lean</text>
+  <text x="370" y="90" font-family="'SF Mono', 'Fira Code', 'JetBrains Mono', monospace"
+        font-size="52" font-weight="bold" fill="url(#accent)">fuzz</text>
+
+  <!-- Tagline -->
+  <text x="200" y="125" font-family="'SF Mono', 'Fira Code', monospace"
+        font-size="14" fill="#8888aa" letter-spacing="0.5">
+    fuzzing library for Lean 4
+  </text>
+
+  <!-- Pipeline badges -->
+  <g transform="translate(200, 145)">
+    <!-- Surface syntax -->
+    <rect x="0" y="0" width="90" height="22" rx="4" fill="#1e3a5f" stroke="#3366aa" stroke-width="0.5"/>
+    <text x="45" y="15" font-family="monospace" font-size="10" fill="#6b9fff"
+          text-anchor="middle">surface</text>
+
+    <!-- Raw kernel -->
+    <rect x="100" y="0" width="90" height="22" rx="4" fill="#3a1e1e" stroke="#aa3333" stroke-width="0.5"/>
+    <text x="145" y="15" font-family="monospace" font-size="10" fill="#ff6b6b"
+          text-anchor="middle">raw kernel</text>
+
+    <!-- Typed -->
+    <rect x="200" y="0" width="90" height="22" rx="4" fill="#1e3a2a" stroke="#33aa66" stroke-width="0.5"/>
+    <text x="245" y="15" font-family="monospace" font-size="10" fill="#66dd99"
+          text-anchor="middle">typed</text>
+
+    <!-- AFL++ -->
+    <rect x="300" y="0" width="70" height="22" rx="4" fill="#3a2a1e" stroke="#aa7733" stroke-width="0.5"/>
+    <text x="335" y="15" font-family="monospace" font-size="10" fill="#ffa64d"
+          text-anchor="middle">AFL++</text>
+  </g>
+
+  <!-- Version / corner accent -->
+  <text x="590" y="185" font-family="monospace" font-size="10" fill="#555577"
+        text-anchor="end">v0.1.0</text>
+</svg>

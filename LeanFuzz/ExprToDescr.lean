@@ -120,71 +120,50 @@ partial def parserFnToDescr (env : Environment) (e : Expr) : ParserDescr :=
   | .proj ``TrailingParser _ parserExpr => exprToDescrCore env parserExpr
   -- nodeFn kind body — wrap in node, recurse on body
   | .const n _ =>
-    if n == `Lean.Parser.nodeFn then
+    match n with
+    | `Lean.Parser.nodeFn => 
       let kind := exprToName env fnArgs[0]! |>.getD (panic! s!"nodeFn: can't extract kind from {fnArgs[0]!}")
       let body := parserFnToDescr env fnArgs[1]!
       ParserDescr.node kind 0 body
     -- andthenFn p q — sequential composition
-    else if n == `Lean.Parser.andthenFn then
+    | `Lean.Parser.andthenFn =>
       ParserDescr.binary `Lean.Parser.andthen (parserFnToDescr env fnArgs[0]!) (parserFnToDescr env fnArgs[1]!)
     -- orelseFn p q — choice
-    else if n == `Lean.Parser.orelseFn || n == `Lean.Parser.orelseFnCore then
+    | `Lean.Parser.orelseFn | `Lean.Parser.orelseFnCore =>
       ParserDescr.binary `Lean.Parser.orelse (parserFnToDescr env fnArgs[0]!) (parserFnToDescr env fnArgs[1]!)
     -- recoverFn p handler — error recovery, extract main parser
-    else if n == `Lean.Parser.recoverFn then
-      parserFnToDescr env fnArgs[0]!
+    | `Lean.Parser.recoverFn => parserFnToDescr env fnArgs[0]!
     -- withResultOfFn p f — transform result, extract main parser
-    else if n == `Lean.Parser.withResultOfFn then
-      parserFnToDescr env fnArgs[0]!
+    | `Lean.Parser.withResultOfFn => parserFnToDescr env fnArgs[0]!
     -- withAntiquotFn antiq body — skip antiquot, use body
-    else if n == `Lean.Parser.withAntiquotFn then
-      parserFnToDescr env fnArgs[1]!
+    | `Lean.Parser.withAntiquotFn => parserFnToDescr env fnArgs[1]!
     -- withAntiquotSpliceAndSuffixFn — extract the suffix parser body
-    else if n == `Lean.Parser.withAntiquotSpliceAndSuffixFn then
-      parserFnToDescr env fnArgs[1]!
+    | `Lean.Parser.withAntiquotSpliceAndSuffixFn => parserFnToDescr env fnArgs[1]!
     -- adaptCacheableContextFn f body — pass through to body
-    else if n == `Lean.Parser.adaptCacheableContextFn then
-      parserFnToDescr env fnArgs[1]!
+    | `Lean.Parser.adaptCacheableContextFn => parserFnToDescr env fnArgs[1]!
     -- rawFn p trailingWs — unwrap to inner parser
-    else if n == `Lean.Parser.rawFn then
-      parserFnToDescr env fnArgs[0]!
+    | `Lean.Parser.rawFn => parserFnToDescr env fnArgs[0]!
     -- Zero-output checks (Fn variants — direct parser function references)
-    else if n == `Lean.Parser.notFollowedByFn then
-      mkNotFollowedByDescr (extractSymbols (parserFnToDescr env fnArgs[0]!))
-    else if n == `Lean.Parser.checkPrecFn then
-      ParserDescr.const `Lean.Parser.checkPrec
-    else if n == `Lean.Parser.checkColGeFn then
-      ParserDescr.const `Lean.Parser.checkColGe
-    else if n == `Lean.Parser.checkColGtFn then
-      ParserDescr.const `Lean.Parser.checkColGt
-    else if n == `Lean.Parser.checkLineEqFn then
-      ParserDescr.const `Lean.Parser.checkLineEq
-    else if n == `Lean.Parser.checkNoWsBeforeFn then
-      ParserDescr.const `Lean.Parser.checkNoWsBefore
-    else if n == `Lean.Parser.whitespaceBeforeFn then
-      ParserDescr.const `Lean.Parser.checkWsBefore
-    else if n == `Lean.Parser.ppLineFn then
-      ParserDescr.const `Lean.Parser.ppLine
-    else if n == `Lean.Parser.ppSpaceFn then
-      ParserDescr.const `Lean.Parser.ppSpace
-    else if n == `Lean.Parser.hygieneInfoFn then
-      ParserDescr.const `Lean.Parser.checkPrec
-    else if n == `Lean.Parser.setExpectedFn then
-      if fnArgs.size >= 2 then parserFnToDescr env fnArgs[1]!
-      else ParserDescr.const `Lean.Parser.checkPrec
-    else if n == `Lean.Parser.checkColEqFn then
-      ParserDescr.const `Lean.Parser.checkLineEq
+    | `Lean.Parser.notFollowedByFn => mkNotFollowedByDescr (extractSymbols (parserFnToDescr env fnArgs[0]!))
+    | `Lean.Parser.checkPrecFn => ParserDescr.const `Lean.Parser.checkPrec
+    | `Lean.Parser.checkColGeFn => ParserDescr.const `Lean.Parser.checkColGe
+    | `Lean.Parser.checkColGtFn => ParserDescr.const `Lean.Parser.checkColGt
+    | `Lean.Parser.checkLineEqFn => ParserDescr.const `Lean.Parser.checkLineEq
+    | `Lean.Parser.checkNoWsBeforeFn => ParserDescr.const `Lean.Parser.checkNoWsBefore
+    | `Lean.Parser.whitespaceBeforeFn => ParserDescr.const `Lean.Parser.checkWsBefore
+    | `Lean.Parser.ppLineFn => ParserDescr.const `Lean.Parser.ppLine
+    | `Lean.Parser.ppSpaceFn => ParserDescr.const `Lean.Parser.ppSpace
+    | `Lean.Parser.hygieneInfoFn => ParserDescr.const `Lean.Parser.checkPrec
+    | `Lean.Parser.setExpectedFn => if fnArgs.size >= 2 then parserFnToDescr env fnArgs[1]! else ParserDescr.const `Lean.Parser.checkPrec
+    | `Lean.Parser.checkColEqFn => ParserDescr.const `Lean.Parser.checkLineEq
     -- lookaheadFn — zero-output, rewinds position on success
-    else if n == `Lean.Parser.lookaheadFn then
-      ParserDescr.const `Lean.Parser.checkPrec
+    | `Lean.Parser.lookaheadFn => ParserDescr.const `Lean.Parser.checkPrec
     -- Opaque single-char checks
-    else if n == `Lean.Parser.satisfyFn then
-      ParserDescr.const `Lean.Parser.rawToken
+    | `Lean.Parser.satisfyFn => ParserDescr.const `Lean.Parser.rawToken
     -- Comment body parsers
-    else if n == `Lean.Parser.finishCommentBlock || n == `Lean.Parser.versoCommentBodyFn then
-      ParserDescr.const `Lean.Parser.commentBody
+    | `Lean.Parser.finishCommentBlock | `Lean.Parser.versoCommentBodyFn => ParserDescr.const `Lean.Parser.commentBody
     -- sepBy1Fn p sep psep allowTrailingSep — reconstruct sepBy1
-    else if n == `Lean.Parser.sepBy1Fn then
+    |  `Lean.Parser.sepBy1Fn =>
       let p := parserFnToDescr env fnArgs[0]!
       let psep := parserFnToDescr env fnArgs[1]!
       match fnArgs[2]! with
@@ -193,7 +172,7 @@ partial def parserFnToDescr (env : Environment) (e : Expr) : ParserDescr :=
         ParserDescr.sepBy1 p sep psep trail
       | other => panic! s!"sepBy1Fn: can't extract separator from {other}"
     -- sepByFn p sep psep allowTrailingSep
-    else if n == `Lean.Parser.sepByFn then
+    | `Lean.Parser.sepByFn =>
       let p := parserFnToDescr env fnArgs[0]!
       let psep := parserFnToDescr env fnArgs[1]!
       match fnArgs[2]! with
@@ -202,44 +181,41 @@ partial def parserFnToDescr (env : Environment) (e : Expr) : ParserDescr :=
         ParserDescr.sepBy p sep psep trail
       | other => panic! s!"sepByFn: can't extract separator from {other}"
     -- manyFn / many1Fn
-    else if n == `Lean.Parser.manyFn then
-      ParserDescr.unary `Lean.Parser.many (parserFnToDescr env fnArgs[0]!)
-    else if n == `Lean.Parser.many1Fn then
-      ParserDescr.unary `Lean.Parser.many1 (parserFnToDescr env fnArgs[0]!)
+    | `Lean.Parser.manyFn => ParserDescr.unary `Lean.Parser.many (parserFnToDescr env fnArgs[0]!)
+    | `Lean.Parser.many1Fn => ParserDescr.unary `Lean.Parser.many1 (parserFnToDescr env fnArgs[0]!)
     -- optionalFn
-    else if n == `Lean.Parser.optionalFn then
-      ParserDescr.unary `Lean.Parser.optional (parserFnToDescr env fnArgs[0]!)
+    | `Lean.Parser.optionalFn => ParserDescr.unary `Lean.Parser.optional (parserFnToDescr env fnArgs[0]!)
     -- tokenFn / symbolFn
-    else if n == `Lean.Parser.tokenFn then
-      ParserDescr.const `Lean.Parser.rawToken
-    else if n == `Lean.Parser.symbolFn then
+    | `Lean.Parser.tokenFn => ParserDescr.const `Lean.Parser.rawToken
+    | `Lean.Parser.symbolFn =>
       match fnArgs[0]! with
       | .lit (.strVal s) => ParserDescr.symbol s
       | other => panic! s!"symbolFn: can't extract symbol from {other}"
     -- identFn
-    else if n == `Lean.Parser.identFn then
-      ParserDescr.const `ident
-    -- parserOfStackFn — dynamic dispatch based on syntax stack (truly opaque)
-    else if n == `Lean.Parser.parserOfStackFn || (n.toString.splitOn "parserOfStackFn").length > 1 then
-      ParserDescr.const `Lean.Parser.rawToken
+    | `Lean.Parser.identFn => ParserDescr.const `ident
+    -- parserOfStackFn — dynamic dispatch based on syntax stack
+    | `Lean.Parser.parserOfStackFn => ParserDescr.const `Lean.Parser.rawToken
     -- categoryParserFn
-    else if n == `Lean.Parser.categoryParserFn then
+    | `Lean.Parser.categoryParserFn =>
       let catName := exprToName env fnArgs[0]! |>.getD (panic! s!"categoryParserFn: can't extract catName from {fnArgs[0]!}")
       let prec := exprToNat env fnArgs[1]! |>.getD (panic! s!"categoryParserFn: can't extract prec from {fnArgs[1]!}")
       ParserDescr.cat catName prec
     -- Decidable.rec / ite — runtime conditionals in ParserFn code.
     -- These are error handling / state checks, not parser structure.
     -- Treat as opaque (the parser still consumes input via the non-error path).
-    else if n == ``Decidable.rec || n == ``ite then
+    | ``Decidable.rec | ``ite =>
       ParserDescr.const `Lean.Parser.checkPrec
     -- Unknown constant — try to unfold through environment
-    else
-      let val := (env.find? n |>.bind (·.value?)).getD
-        (panic! s!"parserFnToDescr: can't unfold {n}")
-      if fnArgs.size > 0 then
-        parserFnToDescr env (Expr.beta val fnArgs)
+    | _ =>
+      if  (n.toString.splitOn "parserOfStackFn").length > 1
+      then ParserDescr.const `Lean.Parser.rawToken
       else
-        parserFnToDescr env val
+         let val := (env.find? n |>.bind (·.value?)).getD
+           (panic! s!"parserFnToDescr: can't unfold {n}")
+         if fnArgs.size > 0 then
+           parserFnToDescr env (Expr.beta val fnArgs)
+         else
+           parserFnToDescr env val
   -- Lambda — strip binder and recurse
   | .lam _ _ body _ =>
     if fnArgs.size > 0 then
@@ -248,8 +224,7 @@ partial def parserFnToDescr (env : Environment) (e : Expr) : ParserDescr :=
       parserFnToDescr env body
   | other => panic! s!"parserFnToDescr: unhandled head {other.ctorName}"
 
-/-- Main extraction: convert a parser Expr to ParserDescr.
-    Fuel counts constant-unfolding steps only (structural recursion is free). -/
+/-- Main extraction: convert a parser Expr to ParserDescr. -/
 partial def exprToDescrCore (env : Environment) (e : Expr) : ParserDescr :=
   let e := stripWrappers e
   -- Handle letE (have/let in core Expr)

@@ -98,7 +98,7 @@ def GenState.nextNat (s : GenState) (n : Nat) : GenState × Nat :=
 /-- Construct a GenState with default fields for a given seed and category. -/
 def GenState.initial (seed : UInt64) (catName : Name) (tokenTrie : Lean.Parser.TokenTable)
     (config : GenConfig := {}) : GenState :=
-  { config, seed, col := 0, savedCol := 0, visiting := Lean.NameSet.empty.insert catName,
+  { config, seed, col := 0, savedCol := 0, visiting := Lean.NameSet.empty,
     noNewlines := false, noWsBefore := false, forbiddenPrefixes := #[],
     tokenTrie, lastWasSymbol := false, suppressTrail := false }
 
@@ -106,7 +106,7 @@ def GenState.initial (seed : UInt64) (catName : Name) (tokenTrie : Lean.Parser.T
     Falls back to LCG with seed 42 when the buffer is exhausted. -/
 def GenState.initialWithBuffer (buf : ByteArray) (catName : Name)
     (tokenTrie : Lean.Parser.TokenTable) (config : GenConfig := {}) : GenState :=
-  { config, seed := 42, col := 0, savedCol := 0, visiting := Lean.NameSet.empty.insert catName,
+  { config, seed := 42, col := 0, savedCol := 0, visiting := Lean.NameSet.empty,
     noNewlines := false, noWsBefore := false, forbiddenPrefixes := #[],
     tokenTrie, lastWasSymbol := false, suppressTrail := false,
     buffer := buf, bufPos := 0 }
@@ -753,16 +753,17 @@ where
     return result
 
 /-- Generate a random program from the grammar. -/
-def generateProgram (grammar : Grammar) (tokenTrie : Lean.Parser.TokenTable) (seed : UInt64 := 42) : String :=
-  let state := GenState.initial seed `command tokenTrie
-  let result := generate (ParserDescr.cat `command 0) grammar.categories |>.run state
+def generateProgram (grammar : Grammar) (tokenTrie : Lean.Parser.TokenTable)
+    (seed : UInt64 := 42) (category : Name := `command) : String :=
+  let state := GenState.initial seed category tokenTrie
+  let result := generate (ParserDescr.cat category 0) grammar.categories |>.run state
   result.1
 
 /-- Generate a random program using fuzzer input bytes as the randomness source. -/
 def generateProgramFromBytes (grammar : Grammar) (tokenTrie : Lean.Parser.TokenTable)
-    (buffer : ByteArray) : String :=
-  let state := GenState.initialWithBuffer buffer `command tokenTrie
-  let result := generate (ParserDescr.cat `command 0) grammar.categories |>.run state
+    (buffer : ByteArray) (category : Name := `command) : String :=
+  let state := GenState.initialWithBuffer buffer category tokenTrie
+  let result := generate (ParserDescr.cat category 0) grammar.categories |>.run state
   result.1
 
 end LeanFuzz

@@ -1,7 +1,34 @@
+# LeanFuzz — coverage-guided fuzzing for Lean 4
+#
+# Use as a library:
+#
+#   [[require]]
+#   name = "lean-fuzz"
+#   git  = "https://github.com/<user>/lean-fuzz"
+#   rev  = "main"
+#
+# Create Main.lean:
+#
+#   import LeanFuzz
+#
+#   def target : LeanFuzz.FuzzTarget := {
+#     run := fun bytes => do
+#       let input := String.fromUTF8? bytes |>.getD ""
+#       let _ := MyLib.parse input
+#   }
+#
+#   def main (args : List String) : IO Unit :=
+#     LeanFuzz.fuzz target args
+#
+# Run:
+#
+#   lake exe fuzz                  # 10k random inputs
+#   lake exe fuzz --setup-afl     # generate AFL++ scripts
+#   ./fuzz/run-afl.sh             # coverage-guided fuzzing
+
 name = "lean-fuzz"
-version = "0.1.0"
+version = "0.2.0"
 defaultTargets = ["lean-fuzz"]
-testDriver = "test"
 
 [[lean_lib]]
 name = "LeanFuzz"
@@ -9,8 +36,3 @@ name = "LeanFuzz"
 [[lean_exe]]
 name = "lean-fuzz"
 root = "Main"
-
-[[lean_exe]]
-name = "test"
-root = "LeanFuzz.Test"
-

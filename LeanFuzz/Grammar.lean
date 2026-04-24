@@ -39,13 +39,15 @@ def extractCategoryGrammar (env : Environment) (catName : Name)
   let mut rules : Array GrammarRule := #[]
   let kindsList := cat.kinds.foldl (init := #[]) fun acc k _ => acc.push k
   for declName in kindsList do
-    -- Skip Tactic.unknown — it's a catch-all that parses any ident
-    -- then immediately errors via errorAtSavedPos (by design)
-    -- Skip aux_def — internal command, not registered as a public parser
     if declName == `Lean.Parser.Tactic.unknown
         || declName == `Lean.Elab.Command.aux_def then continue
-    let (isLeading, descr) ← extractParserDescr env declName
-    rules := rules.push { declName, isLeading, descr }
+    if env.find? declName |>.isNone then continue
+    let result ← try
+      pure (some (← extractParserDescr env declName))
+    catch _ =>
+      pure none
+    if let some (isLeading, descr) := result then
+      rules := rules.push { declName, isLeading, descr }
   return { name := catName, rules }
 
 /-- Activate all scoped parser entries on an environment.
