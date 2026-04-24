@@ -78,6 +78,51 @@ name = "my-fuzzer"
 root = "Main"
 ```
 
+## Grammar export
+
+Dump the extracted grammar for use with AFL++ Grammar Mutator or other
+tools:
+
+```bash
+lake exe fuzz-radix --dump-grammar json   # full tree-structured JSON
+lake exe fuzz-radix --dump-grammar afl    # AFL++ Grammar Mutator format
+lake exe fuzz-radix --dump-grammar text   # human-readable text
+```
+
+The AFL++ format is a flat CFG where each nonterminal maps to an array
+of productions. Token pools from `GenConfig` are emitted as helper
+nonterminals so the mutator explores diverse values:
+
+```json
+{
+  "<rstmt>": [
+    ["while ", "(", "<term>", ")", " {", "<_rep_1250>", "}"],
+    ["if ", "(", "<term>", ")", " {", "<_rep_1251>", "}", "<_opt_1252>"],
+    ["let ", "<_ident>", " : ", "<rty>", " = ", "<term>", ";"],
+    ["<_ident>", "[", "<term>", "]", " := ", "<term>", ";"],
+    ["return ", "<term>", ";"],
+    ["<_ident>", " := ", "<term>", ";"]
+  ],
+  "<rty>": [
+    ["bool"], ["uint64"], ["unit"], ["string"],
+    ["<_ident>", " ", "<_ident>", "[]"]
+  ],
+  "<_ident>": [["x"], ["y"], ["z"], ["a"], ["b"], ["n"], ["m"], ["f"], ["g"], ["h"]],
+  "<_num>": [["1"], ["2"], ["42"], ["100"]],
+  "<_str>": [["\"hello\""], ["\"world\""], ["\"\""], ["\"test\""]]
+}
+```
+
+Example grammars for real Lean projects are in
+[`examples/grammars/`](examples/grammars/):
+
+| Project | Custom categories | AFL JSON |
+|---------|-------------------|----------|
+| [RadixExperiment](https://github.com/leodemoura/RadixExperiment) | `rstmt`, `rty` | [radix-afl.json](examples/grammars/radix-afl.json) (3K lines) |
+| [Strata](https://github.com/strata-org/Strata) | `tprim`, `tident`, `tcons` | [strata-afl.json](examples/grammars/strata-afl.json) (10K lines) |
+| [Veil](https://github.com/verse-lab/veil) | `veilKeyword`, `spec`, `sexp` | [veil-afl.json](examples/grammars/veil-afl.json) (11K lines) |
+| [Velvet](https://github.com/verse-lab/velvet) | `stacksTagDB`, `require_caluse` | [velvet-afl.json](examples/grammars/velvet-afl.json) (11K lines) |
+
 ## CLI options
 
 ```bash
@@ -87,6 +132,7 @@ lake exe my-fuzzer --seed 42          # deterministic RNG seed
 lake exe my-fuzzer --verbose          # print all crashes
 lake exe my-fuzzer --replay <file>    # replay a crash file
 lake exe my-fuzzer --setup-afl        # generate AFL++ integration scripts
+lake exe my-fuzzer --dump-grammar afl # dump grammar for AFL++
 ./fuzz/run-afl.sh                     # coverage-guided fuzzing with AFL++
 ```
 

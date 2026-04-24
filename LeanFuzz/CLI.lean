@@ -25,7 +25,7 @@ MODES
   --afl               AFL++ mode: read one input from stdin
   --replay <file>     Replay a crash file
   --setup-afl         Generate AFL++ integration scripts in ./fuzz/
-  --dump-grammar <fmt> Dump extracted grammar (json or text)
+  --dump-grammar <fmt> Dump extracted grammar (json, afl, or text)
   --help              Show this help
 
 FLAGS
@@ -86,6 +86,8 @@ private partial def parseArgs : List String → ParsedArgs → ParsedArgs
     parseArgs rest { r with mode := "dump-grammar", dumpFormat := some "json" }
   | "--dump-grammar" :: "text" :: rest, r =>
     parseArgs rest { r with mode := "dump-grammar", dumpFormat := some "text" }
+  | "--dump-grammar" :: "afl" :: rest, r =>
+    parseArgs rest { r with mode := "dump-grammar", dumpFormat := some "afl" }
   | "--dump-grammar" :: rest, r =>
     parseArgs rest { r with mode := "dump-grammar", dumpFormat := some "json" }
   | "--replay" :: path :: rest, r =>
@@ -298,6 +300,7 @@ private unsafe def fuzzGrammarUnsafe (imports : Array Lean.Name) (category : Lea
   if parsed.mode == "dump-grammar" then
     match parsed.dumpFormat.getD "json" with
     | "text" => IO.println grammar.pretty
+    | "afl" => IO.println grammar.toAflJsonString
     | _ => IO.println grammar.toJsonString
     return
   let tokenTrie := Lean.Parser.getTokenTable env
